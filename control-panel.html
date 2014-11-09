@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Control Panel</title>
+
+        <!-- Bootstrap -->
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/control-panel.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+          <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+          <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        <h3>Inspect Hash Tag</h3>
+        <form class="navbar-form navbar-left" role="search">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Search" id="hashtag">
+            </div>
+            <button type="button" id="button" class="btn btn-default">Search</button>
+        </form>
+        <div style="clear: both"></div>
+        <h4 id="results-label" class="hide"></h4>
+        <table id="results-table" class="hide">
+            <tr>
+                <th>Screen Name</th>
+                <th>Profile Pic</th>
+                <th>User name</th>
+                <th>Photo</th>
+                <th>Status</th>
+                <th>Time</th>
+                <th>Hide?</th>
+            </tr>
+        </table>
+
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+        <!--        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
+        <script src="jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
+        <!-- Include all compiled plugins (below), or include individual files as needed -->
+        <script src="js/bootstrap.min.js"></script>
+        <script type="text/javascript">
+            var button = $("#button");
+            var input = $("#hashtag");
+            var results_label = $("#results-label");
+            var table = document.getElementById("results-table");
+            var jtable = $("#results-table");
+
+            button.click(function() {
+                var hashtag = input.val();
+                if (hashtag === "")
+                    return;
+
+                button.prop('disabled', true);
+                input.prop('disabled', true);
+                results_label.removeClass("hide");
+                jtable.removeClass("hide");
+                results_label.text("Searching...");
+
+                clearTableRows(table);
+                
+                search(hashtag,-1);
+                
+            });
+            function search(hashtag,max_id) {
+                var url = "twitter.php?tag=" + hashtag
+                if(max_id !== -1 )
+                    url += "&max_id="+max_id;
+                
+                $.get(url, function(data) {
+                    results_label.text("Results");
+                    var new_max_id = insertResultsInTable(data, table);
+                    if(new_max_id !== 0)
+                        search(hashtag,new_max_id);
+                    button.prop('disabled', false);
+                    input.prop('disabled', false);
+
+                }, "json")
+                        .fail(function() {
+                            results_label.text("Something went wrong, do you have internet access?");
+                            button.prop('disabled', false);
+                            input.prop('disabled', false);
+                        });
+
+            }
+
+            function insertResultsInTable(data, table) {
+                var max_id = 0;
+                for (var i = 0, j = data.length; i < j; i++) {
+                    var newRow = table.insertRow(-1);
+                    var newCell = newRow.insertCell(newRow.cells.length);
+                    newCell.innerHTML = data[i].screen_name;
+                    newCell = newRow.insertCell(newRow.cells.length);
+                    var img = "<img src='" + data[i].profile_image_url + "'>";
+                    newCell.innerHTML = img;
+                    newCell = newRow.insertCell(newRow.cells.length);
+                    newCell.innerHTML = data[i].user_name;
+                    //
+                    newCell = newRow.insertCell(newRow.cells.length);
+                    newCell.innerHTML = "";
+                    if (data[i].original_tweet.entities && data[i].original_tweet.entities.media) {
+                        var media = data[i].original_tweet.entities.media;
+                        for (var k = 0, l = media.length; k < l; k++) {
+                            if (media[k].type.toString().trim() === "photo") {
+                                console.log(media[k]);
+                                var size = media[k].sizes.small;
+                                var photo = "<img width='" + size.w + "' height='" + size.h + "' src='" + media[k].media_url + "'>";
+                                newCell.innerHTML = photo;
+                            }
+                        }
+                    }
+
+                    newCell = newRow.insertCell(newRow.cells.length);
+                    var input = "<input type='hidden' value='" + data[i].status + "'>";
+                    var ta = "<textarea cols='50'>" + data[i].status + "</textarea>";
+                    newCell.innerHTML = input + ta;
+
+                    newCell = newRow.insertCell(newRow.cells.length);
+                    newCell.innerHTML = data[i].time;
+
+                    newCell = newRow.insertCell(newRow.cells.length);
+                    var input = "<input type='hidden' value='" + data[i].original_tweet.id + "'>";
+                    var check = "<input type='checkbox'>";
+                    newCell.innerHTML = check;
+                    
+                    if(i>0)
+                        max_id = data[i].original_tweet.id;
+                }
+                return max_id;
+            }
+            function clearTableRows(table) {
+                var table_rows_count = table.rows.length;
+                while (table_rows_count > 1) {
+                    table.deleteRow(-1);
+                    table_rows_count--;
+                }
+            }
+        </script>
+    </body>
+</html>
