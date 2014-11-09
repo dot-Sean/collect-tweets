@@ -39,6 +39,8 @@
             </tr>
         </table>
 
+        <button type="button" id="button-save" class="btn btn-default hide">Save Button</button>
+
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
         <!--        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
         <script src="jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
@@ -46,10 +48,40 @@
         <script src="js/bootstrap.min.js"></script>
         <script type="text/javascript">
             var button = $("#button");
+            var saveButton = $("#button-save");
             var input = $("#hashtag");
             var results_label = $("#results-label");
             var table = document.getElementById("results-table");
             var jtable = $("#results-table");
+
+            saveButton.click(function() {
+                for (var i = 1, j = table.rows.length; i < j; i++) {
+                    var row = table.rows[i];
+                    var cells = row.cells;
+                    var screen_name = $(cells[0]).html();
+                    var profile_img_url = $("img", $(cells[1])).prop("src");
+                    var user_name = $(cells[2]).html();
+                    var pic = $("img", $(cells[3]));
+                    var pic_url = undefined;
+                    if(pic)
+                        pic_url = pic.prop("src");                    
+                    var status = $("textarea",$(cells[4])).html();
+                    var time = $(cells[5]).html();
+                    var check = $("input[type=checkbox]",$(cells[6])).is(":checked");
+                    var id = $("input[type=hidden]",$(cells[6])).val();
+                    var data = {};
+                    data["screen_name"] = screen_name;
+                    data["profile_img_url"] = profile_img_url;
+                    data["user_name"] = user_name;
+                    data["pic_url"] = pic_url;
+                    data["status"] = status;
+                    data["time"] = time;
+                    data["check"] = check;
+                    data["id"] = id;
+                    $.get("save-twitter.php",data);
+                }
+                saveButton.hide();
+            });
 
             button.click(function() {
                 var hashtag = input.val();
@@ -63,35 +95,39 @@
                 results_label.text("Searching...");
 
                 clearTableRows(table);
-                
-                search(hashtag,-1);
-                
+
+                search(hashtag, -1);
+
             });
-            function search(hashtag,max_id) {
-                var url = "twitter.php?tag=" + hashtag
-                if(max_id !== -1 )
-                    url += "&max_id="+max_id;
-                
+            function search(hashtag, max_id) {
+                var url = "twitter.php?tag=" + hashtag;
+                if (max_id !== -1)
+                    url += "&max_id=" + max_id;
+
                 $.get(url, function(data) {
                     results_label.text("Results");
-                    var new_max_id = insertResultsInTable(data, table);
-                    if(new_max_id !== 0)
-                        search(hashtag,new_max_id);
+                    saveButton.removeClass("hide");
+                    var new_max_id = insertResultsInTable(data, table,(max_id !== -1));
+                    if (new_max_id !== -1)
+                        search(hashtag, new_max_id);
                     button.prop('disabled', false);
                     input.prop('disabled', false);
 
                 }, "json")
                         .fail(function() {
-                            results_label.text("Something went wrong, do you have internet access?");
+                            results_label.text("Something went wrong, do you have internet access? is Twitter working correctly?");
                             button.prop('disabled', false);
                             input.prop('disabled', false);
                         });
 
             }
 
-            function insertResultsInTable(data, table) {
-                var max_id = 0;
-                for (var i = 0, j = data.length; i < j; i++) {
+            function insertResultsInTable(data, table, startFromOne) {
+                var max_id = -1;
+                var i = 0;
+                if(startFromOne)
+                    i = 1;
+                for (j = data.length; i < j; i++) {
                     var newRow = table.insertRow(-1);
                     var newCell = newRow.insertCell(newRow.cells.length);
                     newCell.innerHTML = data[i].screen_name;
@@ -116,9 +152,8 @@
                     }
 
                     newCell = newRow.insertCell(newRow.cells.length);
-                    var input = "<input type='hidden' value='" + data[i].status + "'>";
                     var ta = "<textarea cols='50'>" + data[i].status + "</textarea>";
-                    newCell.innerHTML = input + ta;
+                    newCell.innerHTML = ta;
 
                     newCell = newRow.insertCell(newRow.cells.length);
                     newCell.innerHTML = data[i].time;
@@ -126,10 +161,9 @@
                     newCell = newRow.insertCell(newRow.cells.length);
                     var input = "<input type='hidden' value='" + data[i].original_tweet.id + "'>";
                     var check = "<input type='checkbox'>";
-                    newCell.innerHTML = check;
+                    newCell.innerHTML = check + input;
                     
-                    if(i>0)
-                        max_id = data[i].original_tweet.id;
+                    max_id = data[i].original_tweet.id;
                 }
                 return max_id;
             }

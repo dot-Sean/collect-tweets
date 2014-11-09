@@ -31,7 +31,7 @@ if (strpos($accept_header, "json") !== FALSE) {
         $json_results[$i]["profile_image_url"] = htmlspecialchars($status->user->profile_image_url);
         $json_results[$i]["user_name"] = htmlspecialchars($status->user->name);
         $json_results[$i]["status"] = Twitter::clickable($status);
-        $json_results[$i]["time"] = date("j.n.Y H:i", strtotime($status->created_at));
+        $json_results[$i]["time"] = date("Y-n-j H:i", strtotime($status->created_at));
         $json_results[$i]["original_tweet"] = $status;
         $i++;
     }
