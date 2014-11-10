@@ -36,6 +36,8 @@
                 <th>Status</th>
                 <th>Time</th>
                 <th>Hide?</th>
+                <th>Favorites</th>
+                <th>Retweets</th>
             </tr>
         </table>
 
@@ -55,32 +57,39 @@
             var jtable = $("#results-table");
 
             saveButton.click(function() {
-                for (var i = 1, j = table.rows.length; i < j; i++) {
-                    var row = table.rows[i];
-                    var cells = row.cells;
-                    var screen_name = $(cells[0]).html();
-                    var profile_img_url = $("img", $(cells[1])).prop("src");
-                    var user_name = $(cells[2]).html();
-                    var pic = $("img", $(cells[3]));
-                    var pic_url = undefined;
-                    if(pic)
-                        pic_url = pic.prop("src");                    
-                    var status = $("textarea",$(cells[4])).html();
-                    var time = $(cells[5]).html();
-                    var check = $("input[type=checkbox]",$(cells[6])).is(":checked");
-                    var id = $("input[type=hidden]",$(cells[6])).val();
-                    var data = {};
-                    data["screen_name"] = screen_name;
-                    data["profile_img_url"] = profile_img_url;
-                    data["user_name"] = user_name;
-                    data["pic_url"] = pic_url;
-                    data["status"] = status;
-                    data["time"] = time;
-                    data["check"] = check;
-                    data["id"] = id;
-                    $.get("save-twitter.php",data);
-                }
-                saveButton.hide();
+                var hashtag = input.val();
+                $.get("delete-hashtag.php", {hashtag: hashtag}, function(data) {
+                    for (var i = 1, j = table.rows.length; i < j; i++) {
+                        var row = table.rows[i];
+                        var cells = row.cells;
+                        var screen_name = $(cells[0]).html();
+                        var profile_img_url = $("img", $(cells[1])).prop("src");
+                        var user_name = $(cells[2]).html();
+                        var pic = $("img", $(cells[3]));
+                        var pic_url = undefined;
+                        if (pic)
+                            pic_url = pic.prop("src");
+                        var status = $("textarea", $(cells[4])).val();
+                        var time = $(cells[5]).html();
+                        var check = $("input[type=checkbox]", $(cells[6])).is(":checked");
+                        var id = $("input[type=hidden]", $(cells[6])).val();
+                        var favorites_count = $(cells[7]).html();
+                        var retweets_count = $(cells[8]).html();
+                        var data = {};
+                        data["screen_name"] = screen_name;
+                        data["profile_img_url"] = profile_img_url;
+                        data["user_name"] = user_name;
+                        data["pic_url"] = pic_url;
+                        data["status"] = status;
+                        data["time"] = time;
+                        data["check"] = check;
+                        data["id"] = id;
+                        data["hashtag"] = hashtag;
+                        data["favorites_count"] = favorites_count;
+                        data["retweets_count"] = retweets_count;
+                        $.get("save-twitter.php", data);
+                    }
+                });
             });
 
             button.click(function() {
@@ -91,15 +100,33 @@
                 button.prop('disabled', true);
                 input.prop('disabled', true);
                 results_label.removeClass("hide");
-                jtable.removeClass("hide");
                 results_label.text("Searching...");
 
                 clearTableRows(table);
 
-                search(hashtag, -1);
+                $.get("check-tag.php", {hashtag: hashtag}, function(data) {
+                    if (data === -1)
+                        searchUntilTheEnd(hashtag, -1);
+                    else
+                        searchBD(hashtag, data);
+
+                }, "json");
+
+
 
             });
-            function search(hashtag, max_id) {
+            function searchBD(hashtag, since_id) {
+                $.get("bd.php", {hashtag: hashtag}, function(data) {
+                    insertResultsInTable(data, table, false);
+                    button.prop('disabled', false);
+                    input.prop('disabled', false);
+                    searchSince(hashtag, since_id);
+
+                });
+            }
+            function searchUntilTheEnd(hashtag, max_id) {
+                button.prop('disabled', true);
+                input.prop('disabled', true);
                 var url = "twitter.php?tag=" + hashtag;
                 if (max_id !== -1)
                     url += "&max_id=" + max_id;
@@ -107,9 +134,9 @@
                 $.get(url, function(data) {
                     results_label.text("Results");
                     saveButton.removeClass("hide");
-                    var new_max_id = insertResultsInTable(data, table,(max_id !== -1));
+                    var new_max_id = insertResultsInTable(data, table, (max_id !== -1));
                     if (new_max_id !== -1)
-                        search(hashtag, new_max_id);
+                        searchUntilTheEnd(hashtag, new_max_id);
                     button.prop('disabled', false);
                     input.prop('disabled', false);
 
@@ -121,12 +148,39 @@
                         });
 
             }
+            function searchSince(hashtag, since_id) {
+                button.prop('disabled', true);
+                input.prop('disabled', true);
+                var url = "twitter.php?tag=" + hashtag;
+                url += "&since_id=" + since_id;
+
+                $.get(url, function(data) {
+                    results_label.text("Results");
+                    saveButton.removeClass("hide");
+                    data.pop();
+                    insertResultsInTable(data, table, false);
+                    button.prop('disabled', false);
+                    input.prop('disabled', false);
+
+                }, "json")
+                        .fail(function() {
+                            results_label.text("Something went wrong, do you have internet access? is Twitter working correctly?");
+                            button.prop('disabled', false);
+                            input.prop('disabled', false);
+                            saveButton.removeClass("hide");
+                        });
+
+            }
 
             function insertResultsInTable(data, table, startFromOne) {
+                jtable.removeClass("hide");
                 var max_id = -1;
                 var i = 0;
-                if(startFromOne)
+                if (startFromOne === true)
                     i = 1;
+                var insertIndex = -1;
+//                if (insertInTop === true)
+//                    insertIndex = 1;
                 for (j = data.length; i < j; i++) {
                     var newRow = table.insertRow(-1);
                     var newCell = newRow.insertCell(newRow.cells.length);
@@ -143,12 +197,15 @@
                         var media = data[i].original_tweet.entities.media;
                         for (var k = 0, l = media.length; k < l; k++) {
                             if (media[k].type.toString().trim() === "photo") {
-                                console.log(media[k]);
                                 var size = media[k].sizes.small;
                                 var photo = "<img width='" + size.w + "' height='" + size.h + "' src='" + media[k].media_url + "'>";
                                 newCell.innerHTML = photo;
                             }
                         }
+                    } else if (data[i].pic_url) {
+                        //var photo = "<img width='" + size.w + "' height='" + size.h + "' src='" + media[k].media_url + "'>";
+                        var photo = "<img src='" + data[i].pic_url + "'>";
+                        newCell.innerHTML = photo;
                     }
 
                     newCell = newRow.insertCell(newRow.cells.length);
@@ -160,9 +217,18 @@
 
                     newCell = newRow.insertCell(newRow.cells.length);
                     var input = "<input type='hidden' value='" + data[i].original_tweet.id + "'>";
-                    var check = "<input type='checkbox'>";
+                    var checked ="";
+                    if(data[i].check && data[i].check === "true")
+                        checked = " checked";
+                    var check = "<input type='checkbox'"+checked+">";
                     newCell.innerHTML = check + input;
-                    
+
+                    newCell = newRow.insertCell(newRow.cells.length);
+                    newCell.innerHTML = data[i].favorites_count;
+
+                    newCell = newRow.insertCell(newRow.cells.length);
+                    newCell.innerHTML = data[i].retweets_count;
+
                     max_id = data[i].original_tweet.id;
                 }
                 return max_id;
