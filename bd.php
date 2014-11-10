@@ -1,6 +1,5 @@
 <?php
-
-$servername = "mysql.heartfullmessage.com";
+$servername = "mysql.heartfulmessage.com";
 $username = "collecttweets";
 $password = "collecttweets123";
 $db = "collecttweets";

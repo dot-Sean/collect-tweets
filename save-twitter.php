@@ -1,5 +1,5 @@
 <?php
-$servername = "mysql.heartfullmessage.com";
+$servername = "mysql.heartfulmessage.com";
 $username = "collecttweets";
 $password = "collecttweets123";
 $db = "collecttweets";
@@ -9,14 +9,13 @@ if (get_current_user() === "vagrant") {
     $password = "root";
     $db = "collecttweets";
 }
-
 // Create connection
 $conn = new mysqli($servername, $username, $password, $db);
-
 // Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+
 
 $screen_name = $_GET["screen_name"];
 $profile_img_url = $_GET["profile_img_url"];

@@ -85,19 +85,22 @@
 	</div>
         
         <script>
-	            var tag = "HMフォアグラ";
-            var url = "twitter.php?tag=" + tag;
+            var hashtag = "GMA";                    
+            var url = "message-card.php?hashtag=" + hashtag;
             $.get(url, function(data) {
                 var ulT = $("#tweets");
                 console.log(data.length);
                 for(var i = 0; i < data.length;i++){
-                    console.log(i);
+                    var img ="";
+                    if(data[i].pic_url || data[i].pic_url !== "")
+                        img = "<img src='"+data[i].pic_url+"'>";
                     ulT.append("<article>"
                             + '<div class="post">'
                             + '<div class="wow zoomIn" data-wow-duration="2s">'
                             +"<a href='http://twitter.com/"+data[i].screen_name+"'>"
                             + data[i].user_name +":"
-                            +"</a>"
+                            +"</a><br>"
+                            +img
                             +"<p>"+data[i].status+"</p>"
                             +"<small>"+data[i].time+"</small>"
                             +"</div></div></article>");

@@ -1,6 +1,5 @@
 <?php
-
-$servername = "mysql.heartfullmessage.com";
+$servername = "mysql.heartfulmessage.com";
 $username = "collecttweets";
 $password = "collecttweets123";
 $db = "collecttweets";
@@ -27,6 +26,7 @@ $query = "SELECT
                 tweets
             WHERE 
                 hashtag = '$hashtag'
+                AND check LIKE '%false%'
             ORDER BY 
                 time DESC
                 ";
@@ -50,6 +50,9 @@ while ($row = $result->fetch_row()) {
     $json_results[$i]["time"] = $row[6];
     $json_results[$i]["check"] = $row[7];
     $json_results[$i]["original_tweet"]["id"] = $row[8];
+    $json_results[$i]["favorites_count"] = $row[10];
+    $json_results[$i]["retweets_count"] = $row[11];
+    
     $i++;
 }
 
