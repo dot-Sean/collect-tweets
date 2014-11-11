@@ -41,8 +41,12 @@
                 <th>Retweets</th>
             </tr>
         </table>
-
-        <button type="button" id="button-save" class="btn btn-default hide">Save Button</button>
+        <button type="button" id="button-save" class="btn btn-default hide">
+            Save Button
+        </button>
+        <button type="button" id="button-add" class="btn btn-primary btn-lg hide" data-toggle="modal" data-target="#myModal">
+            Add a tweet
+        </button>
 
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
         <!--        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>-->
@@ -52,11 +56,45 @@
         <script type="text/javascript">
             var button = $("#button");
             var saveButton = $("#button-save");
+            var addButton = $("#button-add");
             var input = $("#hashtag");
             var results_label = $("#results-label");
             var table = document.getElementById("results-table");
             var jtable = $("#results-table");
+            var saveTweetButton = $("#button-save-tweet");
 
+            function saveCustomTweet() {
+                var inputUsername = document.getElementById("input-username");
+                var inputStatus = document.getElementById("input-status");
+                var username = inputUsername.value;
+                var status = inputStatus.value;
+                var hashtag = input.val();
+                if (username === "" || status === "")
+                    return;
+                var date = new Date();
+                console.log(date.getMonth());
+                console.log(date.getUTCMonth());
+                console.log(date.toDateString());
+                console.log(date.toGMTString());
+                var date_string = date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate() + " "
+                        + date.getHours() + ":" + date.getMinutes();
+                var data = [];
+                data.push({
+                    screen_name: "",
+                    profile_image_url: "",
+                    user_name: username,
+                    status: status,
+                    time: date_string,
+                    original_tweet: {
+                        id: 0
+                    },
+                    check: 0,
+                    favorites_count: 0,
+                    retweets_count: 0
+                });
+                $('#myModal').modal('hide');
+                insertResultsInTable(data, table, false);
+            }
             saveButton.click(function() {
                 var hashtag = input.val();
                 $.get("delete-hashtag.php", {hashtag: hashtag}, function(data) {
@@ -92,7 +130,6 @@
                     }
                 });
             });
-
             button.click(function() {
                 var hashtag = input.val();
                 if (hashtag === "")
@@ -102,6 +139,7 @@
                 input.prop('disabled', true);
                 results_label.removeClass("hide");
                 results_label.text("Searching...");
+                addButton.removeClass("hide");
 
                 clearTableRows(table);
 
@@ -172,17 +210,14 @@
                         });
 
             }
-
             function insertResultsInTable(data, table, startFromOne) {
                 jtable.removeClass("hide");
                 var max_id = -1;
                 var i = 0;
                 if (startFromOne === true)
                     i = 1;
-                var insertIndex = -1;
-//                if (insertInTop === true)
-//                    insertIndex = 1;
                 for (j = data.length; i < j; i++) {
+                    console.log("itert");
                     var newRow = table.insertRow(-1);
                     var newCell = newRow.insertCell(newRow.cells.length);
                     newCell.innerHTML = data[i].screen_name;
@@ -218,10 +253,10 @@
 
                     newCell = newRow.insertCell(newRow.cells.length);
                     var input = "<input type='hidden' value='" + data[i].original_tweet.id + "'>";
-                    var checked ="";
-                    if(data[i].check && data[i].check === "true")
+                    var checked = "";
+                    if (data[i].check && data[i].check === "1")
                         checked = " checked";
-                    var check = "<input type='checkbox'"+checked+">";
+                    var check = "<input type='checkbox'" + checked + ">";
                     newCell.innerHTML = check + input;
 
                     newCell = newRow.insertCell(newRow.cells.length);
@@ -229,8 +264,11 @@
 
                     newCell = newRow.insertCell(newRow.cells.length);
                     newCell.innerHTML = data[i].retweets_count;
-
-                    max_id = data[i].original_tweet.id;
+                    
+                    var check = Number(data[i].original_tweet.id);
+                    if (check !== 0)
+                        max_id = data[i].original_tweet.id;
+                    
                 }
                 return max_id;
             }
@@ -242,5 +280,38 @@
                 }
             }
         </script>
+
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">Add a tweet</h4>
+                    </div>
+                    <br>
+                    <form class="form-horizontal" style="width: 500px" role="form">
+                        <div class="form-group">
+                            <label for="input-username" class="col-sm-2 control-label">User Name</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="input-username" placeholder="UserName">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-status" class="col-sm-2 control-label">Status</label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" rows="3" id="input-status"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="button-save-tweet" onclick="saveCustomTweet();">Save changes</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
     </body>
 </html>

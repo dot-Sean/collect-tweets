@@ -33,6 +33,13 @@
 		ga('require', 'displayfeatures');
 		ga('send', 'pageview');
 	</script>
+        <style>
+            .post{
+                margin: 0 auto;
+                margin-bottom: 500px;
+                width: 60%;
+            }
+        </style>
 </head>
 <body>
 	<!--header-->
@@ -85,12 +92,13 @@
 	</div>
         
         <script>
-            var hashtag = "GMA";                    
+            var hashtag = "HMフォアグラ";                    
             var url = "message-card.php?hashtag=" + hashtag;
             $.get(url, function(data) {
                 var ulT = $("#tweets");
-                console.log(data.length);
                 for(var i = 0; i < data.length;i++){
+                    if(data[i].check==="1")
+                        continue;
                     var img ="";
                     if(data[i].pic_url || data[i].pic_url !== "")
                         img = "<img src='"+data[i].pic_url+"'>";
@@ -102,7 +110,7 @@
                             +"</a><br>"
                             +img
                             +"<p>"+data[i].status+"</p>"
-                            +"<small>"+data[i].time+"</small>"
+                            +"<div style='text-align:right'><small>Favorites: "+data[i].favorites_count+" Retweets: "+data[i].retweets_count+"</small></div>"
                             +"</div></div></article>");
                 }
             },"json");

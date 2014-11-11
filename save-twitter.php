@@ -23,7 +23,7 @@ $user_name = $_GET["user_name"];
 $pic_url = $_GET["pic_url"];
 $status = $_GET["status"];
 $time = $_GET["time"];
-$check = $_GET["check"];
+$check = $_GET["check"] === "true" ? 1:0;
 $id = $_GET["id"];
 $hashtag = $_GET["hashtag"];
 $favorites_count = $_GET["favorites_count"];

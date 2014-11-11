@@ -26,11 +26,10 @@ $query = "SELECT
                 tweets
             WHERE 
                 hashtag = '$hashtag'
-                AND check LIKE '%false%'
             ORDER BY 
-                time DESC
+                time ASC
                 ";
-
+//var_dump($query);
 $result = $conn->query($query);
 
 if (!$result)
